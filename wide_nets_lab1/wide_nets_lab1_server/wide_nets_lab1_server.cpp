@@ -21,18 +21,15 @@
 #define DEFAULT_PORT "27015"
 
 
-std::string worddecode(std::string binword) {
+int worddecode(std::string binword) {
   int control = 5;
   int len = 15;
   int codelen = 20;
   int array[20];
   int mistake[5]{ 0 };
 
-  //std::string encodedString = "11110010001011110001";
-  std::string encodedString = binword;
-
   for (int i = 0; i < codelen; i++) {
-    array[i] = (int)encodedString[i]-48;        // Ошибка тут!!!
+    array[i] = (int)binword[i]-48;        // Ошибка тут!!!
     std::cout << array[i];
   }
 
@@ -53,67 +50,104 @@ std::string worddecode(std::string binword) {
   std::cout << "\nОшибка " << error << "\n";
 
   //Проверка на чётность
-  int evenbit((int)encodedString[codelen] - 48); // бит чётности
+  int evenbit((int)binword[codelen] - 48); // бит чётности
   for (int i = 0; i < codelen; i++) {
     evenbit += array[i];
   }
   evenbit %= 2;
 
-  std::string res;
+  int res;
   if (evenbit) {
-    res = "Единичная ошибка "+error;
+    std::cout << "Единичная ошибка в" << error << "\n";
+    res = 1;
+                                                        // Исправление ошибки нужно дописать
   }
   else {
     if (error) {
-      res = "Двойная ошибка ";
+      std::cout << "Двойная ошибка" << "\n";
+      res = 2;
     }
     else {
-      res = "Нет ошибок ";
+      std::cout << "Нет ошибок " << "\n";
+      res = 0;
     }
-  }
-  
-  
+  } 
+  std::cout << res  << "\n";
 
- /* for (int i = 0; i < codelen; i++)
-  {
-    if (!(array[i] == 0 && res.size() == 0))
-      res += std::to_string(array[i]);
-  }*/
-  //std::cout << "\n" << res;
   return res;
 }
 
 
 std::string textdecode(std::string bintext) {
-  int codelen = 20;
-  //int len = 15;
-  //int control = 5;
+  int codelen = 20; // длина кодового слова без бита чётности
+  int control = 5;
 
   std::cout << "Декодирование сообщения" << std::endl;
   //std::string binaryString = "100100011000111011110110110011100101001";
-  std::string binaryString = bintext;
-  std::cout << binaryString << std::endl;
-  std::cout << binaryString.size() << std::endl;
+  std::cout << bintext << " длина " << bintext.size() << std::endl;
 
-  std::string res = "b"; //убрать лишний символ
+  int res(0); //убрать лишний символ
 
-  //std::string a;// проба
-  for (int k = 0; k < binaryString.size(); k += (codelen+1)) {
-    std::string codeword = binaryString.substr(k, (codelen+1));
-    std::cout << codeword << std::endl;
+  //для сбора статистики по количеству ошибок
+  int zero(0);
+  int one(0);
+  int many(0);
+  // для преобразования сообщения в текст
+  std::string symbols;
 
-    std::cout << "\nДекодирование слова\n";
-    res += worddecode(codeword) + " ";
-    std::cout << "\nРезультат слова\n" << res << "\n";
+  // Разбивка на кодовые слова длиной 21
+  std::cout << "Разбивка на кодовые слова\n";
+  for (int k = 0; k < bintext.size(); k += (codelen+1)) {
+    std::string codeword = bintext.substr(k, (codelen+1));
 
-  //  for (int i = 0; i < control; i++) {
-  //    int p = pow(2, i) - 1;
-  //    word.insert(p, std::string("0"));
-  //  }
- 
+    std::cout << "\nКодовое слово\n";
+    std::cout << codeword << " длина " << codeword.size() << std::endl;
+    std::cout << "Декодирование слова\n";
+    res = worddecode(codeword);
+    std::cout << "Результат слова\n" << res << "\n";
+
+    // обработка статистики по ошибкам
+    if (res == 0) {
+      zero++;
+    }
+    else if (res == 1){
+      one++;
+    }
+    else {
+      many++;
+    }
+
+    // Удаление контрольных битов
+      std::cout << "Удаление бита чётности и контрольных битов\n";
+    codeword.erase(codelen, 1);
+    for (int i = control - 1; i >= 0; i--) {
+      int p = pow(2, i) - 1;
+      codeword.erase(p, 1);
+    }
+    std::cout << codeword << " длина " << codeword.size() << "\n";
+
+    std::cout << "Строка символов\n";
+    symbols += codeword;
+    std::cout << codeword << " длина " << symbols.size() << "\n";
+
   }
 
-  return res;
+  std::cout << "Teкст\n";
+  std::string text = "";
+  for (int i = 0; i < symbols.size(); i += 8) {
+    std::string temp = symbols.substr(i, 8);
+    std::bitset<8> mybs(temp);
+    char ch = mybs.to_ullong();
+    text += ch;
+  }
+  std::cout << text << "\n";
+
+  // Обработка статистической информации
+  std::cout << "Статистика\n";
+  std::string statistics = std::to_string(zero) + '_' + std::to_string(one) + '_' + std::to_string(many)+'_';
+  std::cout << statistics << "\n";
+
+  return statistics+text;
 }
 
 
@@ -206,15 +240,13 @@ int __cdecl main(void)
     if (iResult > 0) {
       printf("Bytes received: %d\n", iResult);
     
-    //std::string get  recvbuf; // Как полученный массив символов преобразовать в строку или это не нужно?
     //Декодирование сообщения 
       std::string encoded = recvbuf;
-      std::string res_flag = textdecode("100100011000111011101011011001110010100111011100110000000101001111000011001011011101000000111010000001");
-      //std::string res_flag = textdecode(encoded);
+      std::string res_flag = textdecode(encoded);
       std::cout << "\nРезультат декодирования слова\n" << res_flag << "\n";
 
-      //sendbuf = res_flag.c_str();
-      sendbuf = recvbuf;
+      sendbuf = res_flag.c_str();
+      //sendbuf = recvbuf;
 
       // Echo the buffer back to the sender
       iSendResult = send(ClientSocket, sendbuf, iResult, 0);

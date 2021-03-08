@@ -338,3 +338,6 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/HammingCode/wide_nets_lab1_server.cpp
+/HammingCode/wide_nets_lab1.cpp
+/wide_nets_lab1/f.txt

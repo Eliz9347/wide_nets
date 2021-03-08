@@ -21,6 +21,9 @@
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
 
+//byte[] textBytes
+
+
 std::string wordencode(std::string binword) {
   int control = 5;
   int len = 15;
@@ -30,13 +33,14 @@ std::string wordencode(std::string binword) {
 
   //std::string encodedString = "00100010001011100001";
   std::string encodedString = binword;
-  //std::cout << " Symbol Array\n";
+
   for (int i = 0; i < codelen; i++) {
     array[i] = (int)encodedString[i] - 48;
-    //std::cout << array[i];
+    std::cout << array[i];
   }
   std::cout << "\n";
 
+  // Расчёт контрольных битов
   for (int i = 0; i < codelen; i++) {
     std::bitset<5> b(i + 1);
     //std::cout << b.to_string() << "\n";
@@ -52,23 +56,24 @@ std::string wordencode(std::string binword) {
     array[p] = matr[i];
   }
 
-
   std::string res;
 
   for (int i = 0; i < codelen; i++)
   {
-    if (!(array[i] == 0 && res.size() == 0))
-      res += std::to_string(array[i]);
+    res += std::to_string(array[i]);
   }
 
+  std::cout << "Закодировано" << std::endl;
+  std::cout << res << " длина " << res.size() << "\n";
+
+  std::cout << "Добавление бита чётности" << std::endl;
   int evenbit(0); // бит чётности
   for (int i = 0; i < codelen; i++) {
     evenbit += array[i];
   }
   res += std::to_string(evenbit%2);
+  std::cout << res << " длина " << res.size() << "\n";
 
-
-  //std::cout << "\n" << res;
   return res;
 }
 
@@ -78,44 +83,48 @@ std::string textencode(std::string binword) {
   int len = 15;
   int control = 5;
 
-  std::string s = "Long Text";
+  std::cout << "Кодирование сообщения кодом Хемминга с длиной информационного слова 15" << std::endl;
   // Кодирование сообщения
   std::string binaryString = "";
-  for (char& _char : s) {
+  for (char& _char : binword) {
     binaryString += std::bitset<8>(_char).to_string();
   }
-  std::cout << binaryString << std::endl;
+  std::cout << binaryString << " длина "<< binaryString.size() << std::endl;
 
-  std::string res = ""; //убрать лишний символ
+  // строка для закодированного сообщения
+  std::string res = "";
 
-  std::string a;// проба
+  // Разбивка сообщения на слова длины 15
+  std::cout << "Разбивка сообщения\n";
   for (int k = 0; k < binaryString.size(); k += len) {
     std::string word = binaryString.substr(k, len);
-    std::cout << word << std::endl;
+    
+    std::cout << "\nИсходное информационное слово" << std::endl;
+    std::cout << word << " длина " << word.size() << std::endl;
 
-
+    
+    // Добавление нулей к последнему слову
     if (word.size() < len) {
+      std::cout << "Добавление нулей при необходимости" << std::endl;
       int extr = len - word.size();
       //std::cout << extr << std::endl;
       for (int i = 0; i < extr; i++) {
         word += "0";
       }
+      std::cout << word << " длина " << word.size() << std::endl;
     }
-
-    std::cout << word << std::endl;
     
+    // Добавление контрольных битов
+    std::cout << "Добавление нулевых контрольных битов" << std::endl;
     for (int i = 0; i < control; i++) {
       int p = pow(2, i) - 1;
       word.insert(p, std::string("0"));
     }
 
-    //std::cout << word << std::endl;
-
-    a = word;
-
-    std::cout << "\nКодирование слова\n";
-    res += wordencode(a);
-    std::cout << "\nРезультат слова\n" << res << "\n";
+    std::cout << word << " длина " << word.size() << std::endl;
+    std::cout << "Кодирование слова\n";
+    res += wordencode(word);
+    std::cout << "Результат слова\n" << res << " длина " << res.size() << "\n";
   }
 
   return res;
@@ -136,7 +145,6 @@ int __cdecl main(int argc, char** argv)
   // Кодирование сообщения
   std::cout << "\nКодирование сообщения\n";
   std::string coderes = textencode(s);
-  std::cout << coderes;
   std::cout << "\nРезультат\n" << coderes << "\n";
   std::cout << "\n\n";
 
@@ -240,7 +248,26 @@ int __cdecl main(int argc, char** argv)
     if (re > 0) {
       printf("Bytes received: %d\n", re);
       recvbuf[re] = '\0';
-      std::cout << "From the node: " << recvbuf << std::endl; // проба
+      std::cout << "From the node: " << recvbuf << std::endl;
+      
+      std::string decoded = recvbuf;
+
+      // Обработка статистической информации об ошибках
+      int underline = decoded.find('_');
+      int zero = stoi(decoded.substr(0, underline));
+      decoded.erase(0, underline+1);
+
+      underline = decoded.find('_');
+      int one = stoi(decoded.substr(0, underline));
+      decoded.erase(0, underline+1);
+
+      underline = decoded.find('_');
+      int many = stoi(decoded.substr(0, underline));
+      decoded.erase(0, underline+1);
+      std::cout << "Количество правильно доставленных слов: "<< zero << "\n";
+      std::cout << "Количество исправленных ошибок: " << one << "\n";
+      std::cout << "Количество множественных ошибок: " << many << "\n";
+      std::cout << "Текст:\n" << decoded << "\n";
      
     }
       
