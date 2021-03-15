@@ -18,8 +18,5 @@
     <ClCompile Include="wide_nets_lab1.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="hamming_encoder.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
